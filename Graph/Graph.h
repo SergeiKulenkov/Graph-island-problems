@@ -1,33 +1,35 @@
 #pragma once
 #include <vector>
-#include <string>
+#include "Cell.h"
 
 class Graph
 {
 public:
 	Graph();
-	Graph(int numberOfRows, int numberOfColumns);
 
-	// fills all cells with water, optionally can change the size of the matrix
-	void Initialize(int numberOfRows = 0, int numberOfColumns = 0);
+	Graph(const int size, const std::vector<int>& landCells);
 
-	// adds land at specified matrix position
-	void AddLand(int rowNumber, int columnNumber);
+	// adds land at specified grid position
+	void AddLand(const int columnNumber, const int rowNumber);
 
-	// uses BFS, returns island count
+	// uses BFS to count islands
 	int CountIslands();
 
-	// uses BFS, returns the minimum island's size
+	// uses BFS to find minimum island's size
 	int GetMinimumIslandSize();
 
 private:
+	void ResetSearchData();
+
 	// explores an island using BFS and returns true when an island is explored
-	bool ExploreBreadthFirst(int rowNumber, int columnNumber, std::vector<std::vector<bool>>& visited);
+	bool ExploreBreadthFirst(const int columnNumber, const int rowNumber);
 
 	// explores an island using BFS and returns its size
-	int ExploreSizeBreadthFirst(int rowNumber, int columnNumber, std::vector<std::vector<bool>>& visited);
+	int ExploreSizeBreadthFirst(const int columnNumber, const int rowNumber);
 
 	//////////
 
-	std::vector<std::vector<std::string>> adjacencyMatrix;
+	int m_GridSize;
+	std::vector<Cell> m_Cells;
+	std::vector<bool> m_Visited;
 };

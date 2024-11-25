@@ -1,76 +1,77 @@
 #include "Graph.h"
 
-#define WATER "Water"
-#define LAND "Land"
-
 Graph::Graph()
 {
 	// by default initialize as 1x1 and set to water
-	adjacencyMatrix.resize(1, std::vector<std::string>(1));
-	adjacencyMatrix[0][0] = WATER;
+	m_Cells.emplace_back(CellType::Water);
+	m_GridSize = 1;
 }
 
-Graph::Graph(int numberOfRows, int numberOfColumns)
+Graph::Graph(const int size, const std::vector<int>& landCells)
 {
-	adjacencyMatrix.resize(numberOfRows, std::vector<std::string>(numberOfColumns));
-}
-
-void Graph::Initialize(int numberOfRows, int numberOfColumns)
-{
-	if ((numberOfRows != 0) && (numberOfColumns != 0))
+	m_GridSize = size;
+	m_Cells.resize(m_GridSize * m_GridSize);
+	for (int index = 0; index < m_Cells.size(); index++)
 	{
-		adjacencyMatrix.resize(numberOfRows, std::vector<std::string>(numberOfColumns));
+		m_Cells[index].ChangeType(CellType::Water);
 	}
 
-	for (int rowIndex = 0; rowIndex < adjacencyMatrix.size(); rowIndex++)
+	for (const int index : landCells)
 	{
-		for (int columnIndex = 0; columnIndex < adjacencyMatrix[0].size(); columnIndex++)
-		{
-			adjacencyMatrix[rowIndex][columnIndex] = WATER;
-		}
+		m_Cells[index].ChangeType(CellType::Land);
+	}
+
+	m_Visited.resize(m_Cells.size(), false);
+}
+
+void Graph::ResetSearchData()
+{
+	std::fill(m_Visited.begin(), m_Visited.end(), false);
+}
+
+void Graph::AddLand(const int columnNumber, const int rowNumber)
+{
+	if (columnNumber + m_Cells.size() * rowNumber < m_Cells.size())
+	{
+		m_Cells[columnNumber + m_Cells.size() * rowNumber].ChangeType(CellType::Land);
 	}
 }
 
-void Graph::AddLand(int rowNumber, int columnNumber)
-{
-	adjacencyMatrix[rowNumber][columnNumber] = LAND;
-}
-
-bool Graph::ExploreBreadthFirst(int rowNumber, int columnNumber, std::vector<std::vector<bool>>& visited)
+bool Graph::ExploreBreadthFirst(const int columnNumber, const int rowNumber)
 {
 	bool explored = false;
-	const bool isRowInbounds = ((rowNumber >= 0) && (rowNumber < adjacencyMatrix.size()));
-	const bool isColumnInbounds = ((columnNumber >= 0) && (columnNumber < adjacencyMatrix[0].size()));
+	const bool isRowInbounds = ((rowNumber >= 0) && (rowNumber < m_GridSize));
+	const bool isColumnInbounds = ((columnNumber >= 0) && (columnNumber < m_GridSize));
 
-	if (isRowInbounds && isColumnInbounds && !visited.at(rowNumber).at(columnNumber) &&
-		(adjacencyMatrix[rowNumber][columnNumber] == LAND))
+	if (isRowInbounds && isColumnInbounds && !m_Visited[columnNumber + m_GridSize * rowNumber] &&
+		(m_Cells[columnNumber + m_GridSize * rowNumber].GetType() == CellType::Land))
 	{
-		visited.at(rowNumber).at(columnNumber) = true;
-		ExploreBreadthFirst(rowNumber - 1, columnNumber, visited);
-		ExploreBreadthFirst(rowNumber + 1, columnNumber, visited);
-		ExploreBreadthFirst(rowNumber, columnNumber - 1, visited);
-		ExploreBreadthFirst(rowNumber, columnNumber + 1, visited);
+		m_Visited[columnNumber + m_GridSize * rowNumber] = true;
+		ExploreBreadthFirst(columnNumber - 1, rowNumber);
+		ExploreBreadthFirst(columnNumber + 1, rowNumber);
+		ExploreBreadthFirst(columnNumber, rowNumber - 1);
+		ExploreBreadthFirst(columnNumber, rowNumber + 1);
 		explored = true;
 	}
 
 	return explored;
 }
 
-int Graph::ExploreSizeBreadthFirst(int rowNumber, int columnNumber, std::vector<std::vector<bool>>& visited)
+int Graph::ExploreSizeBreadthFirst(const int columnNumber, const int rowNumber)
 {
 	int size = 0;
-	const bool isRowInbounds = ((rowNumber >= 0) && (rowNumber < adjacencyMatrix.size()));
-	const bool isColumnInbounds = ((columnNumber >= 0) && (columnNumber < adjacencyMatrix[0].size()));
+	const bool isRowInbounds = ((rowNumber >= 0) && (rowNumber < m_GridSize));
+	const bool isColumnInbounds = ((columnNumber >= 0) && (columnNumber < m_GridSize));
 
-	if (isRowInbounds && isColumnInbounds && !visited.at(rowNumber).at(columnNumber) &&
-		(adjacencyMatrix[rowNumber][columnNumber] == LAND))
+	if (isRowInbounds && isColumnInbounds && !m_Visited[columnNumber + m_GridSize * rowNumber] &&
+		(m_Cells[columnNumber + m_GridSize * rowNumber].GetType() == CellType::Land))
 	{
 		size = 1;
-		visited.at(rowNumber).at(columnNumber) = true;
-		size += ExploreSizeBreadthFirst(rowNumber - 1, columnNumber, visited);
-		size += ExploreSizeBreadthFirst(rowNumber + 1, columnNumber, visited);
-		size += ExploreSizeBreadthFirst(rowNumber, columnNumber - 1, visited);
-		size += ExploreSizeBreadthFirst(rowNumber, columnNumber + 1, visited);
+		m_Visited[columnNumber + m_GridSize * rowNumber] = true;
+		size += ExploreSizeBreadthFirst(columnNumber - 1, rowNumber);
+		size += ExploreSizeBreadthFirst(columnNumber + 1, rowNumber);
+		size += ExploreSizeBreadthFirst(columnNumber, rowNumber - 1);
+		size += ExploreSizeBreadthFirst(columnNumber, rowNumber + 1);
 	}
 
 	return size;
@@ -78,20 +79,16 @@ int Graph::ExploreSizeBreadthFirst(int rowNumber, int columnNumber, std::vector<
 
 int Graph::CountIslands()
 {
+	ResetSearchData();
 	int count = 0;
-	std::vector<std::vector<bool>> visited;
-	visited.resize(adjacencyMatrix.size(), std::vector<bool>(adjacencyMatrix[0].size()));
 
-	for (int rowIndex = 0; rowIndex < adjacencyMatrix.size(); rowIndex++)
+	for (int cellIndex = 0; cellIndex < m_Cells.size(); cellIndex++)
 	{
-		for (int columnIndex = 0; columnIndex < adjacencyMatrix[0].size(); columnIndex++)
+		if (!m_Visited[cellIndex])
 		{
-			if (!visited[rowIndex][columnIndex])
+			if (ExploreBreadthFirst(cellIndex % m_GridSize, cellIndex / m_GridSize))
 			{
-				if (ExploreBreadthFirst(rowIndex, columnIndex, visited))
-				{
-					count++;
-				}
+				count++;
 			}
 		}
 	}
@@ -101,23 +98,19 @@ int Graph::CountIslands()
 
 int Graph::GetMinimumIslandSize()
 {
+	ResetSearchData();
 	int minSize = INT_MAX;
 	int size = 0;
-	std::vector<std::vector<bool>> visited;
-	visited.resize(adjacencyMatrix.size(), std::vector<bool>(adjacencyMatrix[0].size()));
 
-	for (int rowIndex = 0; rowIndex < adjacencyMatrix.size(); rowIndex++)
+	for (int cellIndex = 0; cellIndex < m_Cells.size(); cellIndex++)
 	{
-		for (int columnIndex = 0; columnIndex < adjacencyMatrix[0].size(); columnIndex++)
+		if (!m_Visited[cellIndex])
 		{
-			if (!visited[rowIndex][columnIndex])
+			size = ExploreSizeBreadthFirst(cellIndex % m_GridSize, cellIndex / m_GridSize);
+			if ((size > 0) &&
+				(size < minSize))
 			{
-				size = ExploreSizeBreadthFirst(rowIndex, columnIndex, visited);
-				if ((size > 0) &&
-					(size < minSize))
-				{
-					minSize = size;
-				}
+				minSize = size;
 			}
 		}
 	}
