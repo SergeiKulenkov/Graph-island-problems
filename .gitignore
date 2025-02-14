@@ -1,6 +1,6 @@
 /.vs
 /Binaries
-/Graph island problems.sln
-/Graph island problems.vcxproj
-/Graph island problems.vcxproj.filters
-/Graph island problems.vcxproj.user
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln
