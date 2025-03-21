@@ -7,6 +7,8 @@ enum CellType
 	Land = 2,
 };
 
+///////////////
+
 class Cell
 {
 public:
@@ -16,7 +18,7 @@ public:
 	Cell(CellType type) : m_Type(type)
 	{ }
 
-	void ChangeType(CellType type) { m_Type = type; }
+	void ChangeType(const CellType type) { m_Type = type; }
 
 	CellType GetType() const { return m_Type; }
 

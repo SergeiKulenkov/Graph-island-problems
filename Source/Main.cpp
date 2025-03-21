@@ -3,6 +3,8 @@
 
 constexpr int gridSize = 7;
 
+///////////////
+
 void SetupGraph(std::vector<int>& landCells)
 {
 	// column numer (x), row number (y)
